@@ -1,8 +1,35 @@
 #  Delivery Checklist — Day 12 Lab Submission
 
-> **Student Name:** _________________________  
-> **Student ID:** _________________________  
-> **Date:** _________________________
+> **Student Name:** Nguyễn Hoàng Long  
+> **Student ID:** 2A202600160  
+> **Date:** 2026-04-17
+
+---
+
+## 🔍 Part 1 Analysis — Anti-patterns found in `01-localhost-vs-production/develop/app.py`
+
+> [!WARNING]
+> Tổng cộng **9 vấn đề** được phát hiện trong file `app.py` (develop version).
+
+| # | Vấn đề | Dòng | Mô tả | Mức độ |
+|---|--------|------|-------|--------|
+| 1 | **API key hardcode** | 17–18 | `OPENAI_API_KEY` và `DATABASE_URL` (kèm password) được ghi thẳng trong source code. Push lên GitHub → credentials bị lộ ngay lập tức. | 🔴 Critical |
+| 2 | **Không có config management** | 21–22 | `DEBUG = True` và `MAX_TOKENS = 500` là các giá trị cố định, không đọc từ environment variables → không thể thay đổi khi deploy mà không sửa code. | 🟠 High |
+| 3 | **Print thay vì structured logging** | 33, 38 | Dùng `print()` thay cho `logging` module hoặc JSON structured logging → không có log level, không filter được, không integrate với log aggregation (ELK, CloudWatch). | 🟠 High |
+| 4 | **Log ra secret** | 34 | `print(f"[DEBUG] Using key: {OPENAI_API_KEY}")` — in API key ra stdout. Nếu log được thu thập bởi monitoring system, secret bị lộ ở nhiều nơi. | 🔴 Critical |
+| 5 | **Không có health check endpoint** | 42–43 | Không có `/health` → platform (Railway/Render/K8s) không biết khi nào container crash để tự động restart. | 🟠 High |
+| 6 | **Host bind `localhost`** | 51 | `host="localhost"` chỉ listen trên loopback interface → từ bên ngoài container (hoặc từ máy khác) không thể truy cập. Production cần `0.0.0.0`. | 🔴 Critical |
+| 7 | **Port cố định** | 52 | `port=8000` hardcode, không đọc từ `os.environ.get("PORT")`. Trên Railway/Render, PORT được inject qua env var, không phải lúc nào cũng là 8000. | 🟠 High |
+| 8 | **Debug reload trong production** | 53 | `reload=True` bật hot-reload — tốn tài nguyên, không ổn định, có thể gây restart bất ngờ trong production. | 🟡 Medium |
+| 9 | **Không có graceful shutdown** | — | Không có signal handler cho `SIGTERM`/`SIGINT`. Khi container bị stop, requests đang xử lý sẽ bị cắt đột ngột → mất data, bad UX. | 🟠 High |
+
+### Các vấn đề bổ sung (ngoài gợi ý của lab)
+
+| # | Vấn đề | Mô tả |
+|---|--------|-------|
+| A | **Không có authentication** | Endpoint `/ask` không yêu cầu API key → ai cũng gọi được → hết tiền LLM. |
+| B | **Không có rate limiting** | Không giới hạn số request/phút → dễ bị abuse hoặc DDoS. |
+| C | **Không có error handling** | Nếu `ask()` (mock LLM) throw exception, server trả 500 Internal Server Error không có context. |
 
 ---
 
