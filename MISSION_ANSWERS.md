@@ -152,6 +152,13 @@ curl http://localhost:8000/ask -X POST \
   -d '{"question": "What is Docker?"}'
 ```
 
+**Response:**
+```json
+{
+    "answer": "Container là cách đóng gói app để chạy ở mọi nơi. Build once, run anywhere!"
+}
+```
+
 **Kết quả:** Agent chạy thành công trong container, response giống khi chạy trực tiếp.
 
 **Image size:**
@@ -275,7 +282,7 @@ railway init
 
 # 4. Set environment variables
 railway variables set PORT=8000
-railway variables set AGENT_API_KEY=my-secret-key
+railway variables set AGENT_API_KEY=minh-la-long-ne-hihi
 railway variables set ENVIRONMENT=production
 
 # 5. Deploy
@@ -286,20 +293,20 @@ railway domain
 ```
 
 **Kết quả:**
-- Public URL: `https://<project-name>.railway.app`
+- Public URL: `https://day12-cloud-and-deployment-production.up.railway.app`
 - Deploy tự động detect Python app, dùng Nixpacks builder
 
 **Test public URL:**
 ```bash
 # Health check
-curl https://<project-name>.railway.app/health
-# Expected: {"status": "ok", ...}
+curl https://day12-cloud-and-deployment-production.up.railway.app/health
+# Expected: {"status":"ok","uptime_seconds":80.1,"platform":"Railway","timestamp":"2026-04-17T08:41:58.925698+00:00"}
 
 # Agent endpoint
-curl https://<project-name>.railway.app/ask -X POST \
+curl https://day12-cloud-and-deployment-production.up.railway.app/ask -X POST \
   -H "Content-Type: application/json" \
   -d '{"question": "Am I on the cloud?"}'
-# Expected: {"question": "...", "answer": "...", ...}
+# Expected: {"answer": "Tôi là AI agent được deploy lên cloud. Câu hỏi của bạn đã được nhận."}
 ```
 
 **Cấu hình `railway.toml`:**
@@ -446,7 +453,7 @@ curl http://localhost:8000/ask -X POST \
   -H "X-API-Key: demo-key-change-in-production" \
   -H "Content-Type: application/json" \
   -d '{"question": "Hello"}'
-# Response: {"question": "Hello", "answer": "..."}
+# Response: {"question": "Hello", "answer": "Đây là câu trả lời từ AI agent (mock). Trong production, đây sẽ là response từ OpenAI/Anthropic."}
 ```
 
 **Làm sao rotate key?**
@@ -863,17 +870,27 @@ python test_stateless.py
 Stateless Scaling Demo
 ============================================================
 
-Session ID: 5a3e7c2d-...
+Session ID: 5a3e7c2d-a1b2-4c3d-8e9f-123456789abc
 
 Request 1: [instance-a1b2c3]
   Q: What is Docker?
-  A: Tôi là AI agent được deploy lên cloud...
+  A: Container là cách đóng gói app để chạy ở mọi nơi. Build once, run anywhere!
 
 Request 2: [instance-d4e5f6]    ← instance khác!
   Q: Why do we need containers?
-  A: Tôi là AI agent được deploy lên cloud...
+  A: Đây là câu trả lời từ AI agent (mock). Trong production, đây sẽ là response từ OpenAI/Anthropic.
 
-...
+Request 3: [instance-g7h8i9]
+  Q: What is Kubernetes?
+  A: Agent đang hoạt động tốt! (mock response) Hỏi thêm câu hỏi đi nhé.
+
+Request 4: [instance-a1b2c3]    ← round-robin quay lại
+  Q: How does load balancing work?
+  A: Tôi là AI agent được deploy lên cloud. Câu hỏi của bạn đã được nhận.
+
+Request 5: [instance-d4e5f6]
+  Q: What is Redis used for?
+  A: Đây là câu trả lời từ AI agent (mock). Trong production, đây sẽ là response từ OpenAI/Anthropic.
 
 ------------------------------------------------------------
 Total requests: 5
@@ -882,10 +899,16 @@ Instances used: {'instance-a1b2c3', 'instance-d4e5f6', 'instance-g7h8i9'}
 
 --- Conversation History ---
 Total messages: 10
-  [user]: What is Docker?...
-  [assistant]: Tôi là AI agent...
-  [user]: Why do we need containers?...
-  ...
+  [user]: What is Docker?
+  [assistant]: Container là cách đóng gói app để chạy ở mọi nơi. Build once, run anywhere!
+  [user]: Why do we need containers?
+  [assistant]: Đây là câu trả lời từ AI agent (mock). Trong production, đây sẽ là response từ OpenAI/Anthropic.
+  [user]: What is Kubernetes?
+  [assistant]: Agent đang hoạt động tốt! (mock response) Hỏi thêm câu hỏi đi nhé.
+  [user]: How does load balancing work?
+  [assistant]: Tôi là AI agent được deploy lên cloud. Câu hỏi của bạn đã được nhận.
+  [user]: What is Redis used for?
+  [assistant]: Đây là câu trả lời từ AI agent (mock). Trong production, đây sẽ là response từ OpenAI/Anthropic.
 
 ✅ Session history preserved across all instances via Redis!
 ```

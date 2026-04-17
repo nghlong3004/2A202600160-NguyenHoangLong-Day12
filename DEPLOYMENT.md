@@ -9,7 +9,7 @@
 
 ## Public URL
 
-🚀 **https://day12-cloud-and-deployment-production.up.railway.app**
+🚀 **https://day-12-cloud-and-deployment-production.up.railway.app**
 
 ---
 
@@ -18,70 +18,54 @@
 ### 1. Health Check (Liveness Probe)
 
 ```bash
-curl https://day12-cloud-and-deployment-production.up.railway.app/health
+curl https://day-12-cloud-and-deployment-production.up.railway.app/health
 ```
 
-**Expected Response:**
+**Response:**
 ```json
-{
-  "status": "ok",
-  "uptime_seconds": 39.3,
-  "platform": "Railway",
-  "timestamp": "2026-04-17T08:41:18.132758+00:00"
-}
+{"status":"ok","uptime_seconds":81.9,"platform":"Railway","timestamp":"2026-04-17T10:12:12.981549+00:00"}
 ```
 
 ### 2. Root Endpoint
 
 ```bash
-curl https://day12-cloud-and-deployment-production.up.railway.app/
+curl https://day-12-cloud-and-deployment-production.up.railway.app/
 ```
 
-**Expected Response:**
+**Response:**
 ```json
-{
-  "message": "AI Agent running on Railway!",
-  "docs": "/docs",
-  "health": "/health"
-}
+{"message":"AI Agent running on Railway!","docs":"/docs","health":"/health"}
 ```
 
 ### 3. Ask Endpoint (with API Key)
 
 ```bash
-curl https://day12-cloud-and-deployment-production.up.railway.app/ask \
+curl https://day-12-cloud-and-deployment-production.up.railway.app/ask \
   -X POST \
   -H "Content-Type: application/json" \
   -H "X-API-Key: <your-api-key>" \
   -d '{"question": "What is Docker?"}'
 ```
 
-### 4. Ask Endpoint (without API Key — expects 401)
+### 4. Ask Endpoint (without API Key — expects 401/403)
 
 ```bash
-curl https://day12-cloud-and-deployment-production.up.railway.app/ask \
+curl https://day-12-cloud-and-deployment-production.up.railway.app/ask \
   -X POST \
   -H "Content-Type: application/json" \
   -d '{"question": "What is Docker?"}'
 ```
 
-**Expected Response:**
-```json
-{"detail": "Invalid or missing API key"}
-```
-
 ---
 
-## Deployment Configuration
+## Platform: Railway
 
-### Platform: Railway
-
-- **Project:** day12-cloud-and-deployment
 - **Builder:** Nixpacks (auto-detect Python)
 - **Region:** Auto-selected
 - **Health Check:** `/health`
+- **Auto Deploy:** GitHub connected — push to main triggers deploy
 
-### Environment Variables
+### Environment Variables Set
 
 | Variable | Value | Source |
 |----------|-------|--------|
@@ -89,29 +73,13 @@ curl https://day12-cloud-and-deployment-production.up.railway.app/ask \
 | `AGENT_API_KEY` | `****` (secret) | Railway Dashboard |
 | `PORT` | Auto-injected | Railway Platform |
 
-### Railway Project URL
-
-https://railway.com/project/c2fb27fa-99c0-4c63-aaab-f466064136e9
-
 ---
 
-## Deployment Steps
+## CI/CD Pipeline
 
-```bash
-# 1. Login
-railway login
+GitHub Actions runs on every push to `main`:
 
-# 2. Init project
-railway init
-# → Project name: day12-cloud-and-deployment
+1. **Production Readiness Check** — validates 20 criteria
+2. **Docker Build + Test** — builds image, tests health/auth/rate-limit
 
-# 3. Deploy
-railway up
-
-# 4. Get domain
-railway domain
-# → https://day12-cloud-and-deployment-production.up.railway.app
-
-# 5. Set env vars (via Dashboard)
-# Railway Dashboard → Variables → AGENT_API_KEY, ENVIRONMENT
-```
+See: https://github.com/nghlong3004/2A202600160-NguyenHoangLong-Day12/actions
