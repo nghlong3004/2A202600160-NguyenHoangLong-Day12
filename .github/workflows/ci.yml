@@ -63,54 +63,56 @@ jobs:
 
       - name: Start container & health check
         run: |
+          # Start with single worker (multi-worker can fail in CI)
           docker run -d --name agent-test \
             -p 8000:8000 \
             -e ENVIRONMENT=testing \
             -e AGENT_API_KEY=test-key-ci \
-            ai-agent:test
+            ai-agent:test \
+            uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1
 
-          echo "⏳ Waiting for container to start..."
-          sleep 10
+          # Wait for container to be healthy (retry up to 30s)
+          echo "Waiting for container..."
+          for i in $(seq 1 15); do
+            if curl -s http://localhost:8000/health > /dev/null 2>&1; then
+              echo "Container ready after ${i}x2 seconds"
+              break
+            fi
+            if [ "$i" = "15" ]; then
+              echo "Container failed to start. Logs:"
+              docker logs agent-test
+              exit 1
+            fi
+            sleep 2
+          done
 
-          # Health check
+          # Test 1: Health check
           HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/health)
-          if [ "$HTTP_CODE" = "200" ]; then
-            echo "Health check passed (HTTP $HTTP_CODE)"
-          else
-            echo "Health check failed (HTTP $HTTP_CODE)"
-            docker logs agent-test
-            exit 1
-          fi
+          echo "Health check: HTTP $HTTP_CODE"
+          [ "$HTTP_CODE" = "200" ] || { docker logs agent-test; exit 1; }
 
-          # Ready check
+          # Test 2: Ready check
           HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/ready)
           echo "Ready check: HTTP $HTTP_CODE"
 
-          # Auth check (should return 401 without key)
+          # Test 3: Auth required (no key -> 401)
           HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
             -X POST http://localhost:8000/ask \
             -H "Content-Type: application/json" \
             -d '{"question":"test"}')
-          if [ "$HTTP_CODE" = "401" ]; then
-            echo "Auth works (401 without key)"
-          else
-            echo "Auth check failed (expected 401, got $HTTP_CODE)"
-            exit 1
-          fi
+          echo "Auth check (no key): HTTP $HTTP_CODE"
+          [ "$HTTP_CODE" = "401" ] || { echo "Expected 401"; exit 1; }
 
-          # Auth check (should return 200 with key)
+          # Test 4: Auth with key (-> 200)
           HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
             -X POST http://localhost:8000/ask \
             -H "Content-Type: application/json" \
             -H "X-API-Key: test-key-ci" \
             -d '{"question":"test"}')
-          if [ "$HTTP_CODE" = "200" ]; then
-            echo "Ask with key works (200)"
-          else
-            echo "Ask failed (expected 200, got $HTTP_CODE)"
-            docker logs agent-test
-            exit 1
-          fi
+          echo "Ask with key: HTTP $HTTP_CODE"
+          [ "$HTTP_CODE" = "200" ] || { docker logs agent-test; exit 1; }
+
+          echo "All tests passed!"
 
       - name: Cleanup
         if: always()
