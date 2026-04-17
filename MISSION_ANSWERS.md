@@ -293,17 +293,17 @@ railway domain
 ```
 
 **Kết quả:**
-- Public URL: `https://day12-cloud-and-deployment-production.up.railway.app`
+- Public URL: `https://day-12-cloud-and-deployment-production.up.railway.app`
 - Deploy tự động detect Python app, dùng Nixpacks builder
 
 **Test public URL:**
 ```bash
 # Health check
-curl https://day12-cloud-and-deployment-production.up.railway.app/health
+curl https://day-12-cloud-and-deployment-production.up.railway.app/health
 # Expected: {"status":"ok","uptime_seconds":80.1,"platform":"Railway","timestamp":"2026-04-17T08:41:58.925698+00:00"}
 
 # Agent endpoint
-curl https://day12-cloud-and-deployment-production.up.railway.app/ask -X POST \
+curl https://day-12-cloud-and-deployment-production.up.railway.app/ask -X POST \
   -H "Content-Type: application/json" \
   -d '{"question": "Am I on the cloud?"}'
 # Expected: {"answer": "Tôi là AI agent được deploy lên cloud. Câu hỏi của bạn đã được nhận."}
